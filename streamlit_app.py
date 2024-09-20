@@ -9,8 +9,16 @@ ASSISTANT_ID = "asst_5c4B9QMgs3gugmzkt4VdpKRJ"
 # Récupérer la clé API depuis les secrets de Streamlit
 openai_api_key = st.secrets["openai"]["api_key"]
 
-st.title("💬 Audit IA")
-st.write("La manière la plus simple de découvrir les applications potentielles de l'IA dans votre quotidien.")
+st.title("💬 Audit IA par Made in AI")
+st.write("Découvrez les applications potentielles de l'IA dans votre quotidien professionnel.")
+
+st.info("""
+Cette application vous permet de discuter avec un assistant IA de votre quotidien professionnel. 
+L'objectif est de collecter des informations sur vos tâches et défis quotidiens afin que les équipes de Made in AI 
+puissent analyser les résultats et identifier les applications potentielles de l'IA pour améliorer votre travail.
+
+Vos échanges seront analysés par nos consultants pour proposer des solutions IA adaptées à vos besoins.
+""")
 
 user_name = st.text_input("Entrez votre nom :")
 user_email = st.text_input("Entrez votre email pour continuer :")
@@ -29,11 +37,11 @@ if user_name and user_email and user_company:
         try:
             response = requests.post(WEBHOOK_URL, json=data)
             if response.status_code == 200:
-                st.success("Vos informations ont été envoyées avec succès.")
+                st.success("Vos informations ont été enregistrées avec succès.")
             else:
-                st.error(f"Échec de l'envoi des informations. Statut: {response.status_code}")
+                st.error(f"Échec de l'enregistrement des informations. Statut: {response.status_code}")
         except Exception as e:
-            st.error(f"Erreur lors de l'envoi des informations : {e}")
+            st.error(f"Erreur lors de l'enregistrement des informations : {e}")
         st.session_state.info_sent = True
 
     client = OpenAI(api_key=openai_api_key)
@@ -44,6 +52,15 @@ if user_name and user_email and user_company:
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
+        
+        # Message initial de l'IA
+        initial_message = (
+            "Bonjour ! Je suis l'assistant IA de Made in AI. Je suis ici pour discuter de votre quotidien professionnel "
+            "et comprendre comment l'IA pourrait potentiellement améliorer vos processus de travail. "
+            "Pourriez-vous me décrire une journée typique dans votre travail ? "
+            "Quelles sont vos principales tâches et les défis que vous rencontrez régulièrement ?"
+        )
+        st.session_state.messages.append({"role": "assistant", "content": initial_message})
 
     if "sent_messages" not in st.session_state:
         st.session_state.sent_messages = set()
@@ -76,7 +93,7 @@ if user_name and user_email and user_company:
                 else:
                     st.write("✅ Information envoyée au consultant IA")
 
-    if prompt := st.chat_input("Que souhaitez-vous savoir ?"):
+    if prompt := st.chat_input("Décrivez votre journée de travail, vos tâches ou vos défis..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
@@ -92,7 +109,7 @@ if user_name and user_email and user_company:
             assistant_id=ASSISTANT_ID
         )
 
-        with st.spinner("L'assistant réfléchit..."):
+        with st.spinner("L'assistant analyse votre réponse..."):
             while run.status != "completed":
                 time.sleep(1)
                 run = client.beta.threads.runs.retrieve(
